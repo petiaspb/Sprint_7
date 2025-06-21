@@ -14,8 +14,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestParamCreateOrder {
     private final Gson gson = new Gson();
@@ -26,17 +27,18 @@ public class TestParamCreateOrder {
     }
 
     @ParameterizedTest
-    @MethodSource("orderParameters")
-    @DisplayName("Тест с разными параметрами заказа")
-    public void createOrder(String firstName,
-                            String lastName,
-                            String address,
-                            String metroStation,
-                            String phone,
-                            int rentTime,
-                            String deliveryDate,
-                            String comment,
-                            String[] color) {
+    @MethodSource("colorParameters")
+    @DisplayName("Тест с разными цветами заказа")
+    public void createOrderWithDifferentColors(String[] colors) {
+        // Общие параметры заказа
+        String firstName = "Иван";
+        String lastName = "Иванов";
+        String address = "ул. Пушкина, д. 10";
+        String metroStation = "3";
+        String phone = "+79123456789";
+        int rentTime = 3;
+        String deliveryDate = "2024-11-01";
+        String comment = "";
         CreateOrder order = new CreateOrder(firstName,
                 lastName,
                 address,
@@ -45,55 +47,18 @@ public class TestParamCreateOrder {
                 rentTime,
                 deliveryDate,
                 comment,
-                color);
+                colors);
+
         Response response = createOrder(order);
         verifyOrderResponse(response);
-
-
     }
 
-    static Stream<Arguments> orderParameters() {
+    static Stream<Arguments> colorParameters() {
         return Stream.of(
-                Arguments.of("Джон",
-                        "Уик",
-                        "ул. Кукушкина, 5",
-                        "4",
-                        "+79123456789",
-                        3,
-                        "2021-11-31",
-                        "тра та та",
-                        new String[]{"BLACK"}
-                ),
-                Arguments.of("Вин",
-                        "Дизель",
-                        "ул. Пупкина, 18",
-                        "5",
-                        "+79987654321",
-                        5,
-                        "2022-11-01",
-                        "",
-                        new String[]{"GREY"}
-                ),
-                Arguments.of("Гарри",
-                        "Поттер",
-                        "ул. Замковая, 33",
-                        "10",
-                        "+79999999999",
-                        1,
-                        "2024-09-05",
-                        "Чтобы был быстрее метлы",
-                        new String[]{"BLACK", "GREY"}
-                ),
-                Arguments.of( "Анна",
-                        "Каренина",
-                        "пр. Паровозов, 15",
-                        "7",
-                        "+79111111111",
-                        2,
-                        "2025-03-20",
-                        null,
-                        new String[]{})
-
+                Arguments.of((Object) new String[] {"BLACK"}),
+                Arguments.of((Object) new String[] {"GREY"}),
+                Arguments.of((Object) new String[] {"BLACK", "GREY"}),
+                Arguments.of((Object) new String[] {})
         );
     }
 
@@ -112,8 +77,9 @@ public class TestParamCreateOrder {
         response.then().statusCode(201);
 
 
-        int trackNumber = response.then().extract().path("track");
-        assertThat(trackNumber, notNullValue());
+        Integer trackNumber = response.path("track");
+        assertThat(trackNumber, allOf(notNullValue(), instanceOf(Integer.class)));
+        assertTrue(trackNumber > 0, "Трэк номер-положительное число");
     }
 
 
